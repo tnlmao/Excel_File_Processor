@@ -34,7 +34,7 @@ This project provides a backend service for managing Excel data through three ma
 
 ### 3. Edit
 
-- **Method**: `PATCH`
+- **Method**: `PUT`
 - **Endpoint**: `/edit`
 - **Description**: Updates a specific record in the database and Redis.
 - **Request Body**: JSON object with the record details, including the ID and fields to be updated.
@@ -62,3 +62,7 @@ This project provides a backend service for managing Excel data through three ma
 2. View data: Send a GET request to /view to see the data
 
 3. Edit a record: Send a PUT request to /edit with the JSON payload containing the updated record.
+
+## Extras
+
+1. Gave alternate implementation for inserting data in database using a csv files.

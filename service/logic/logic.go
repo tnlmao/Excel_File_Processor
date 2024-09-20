@@ -33,16 +33,13 @@ func (e *ExcelService) UploadFile(c context.Context) models.Response {
 	} else {
 		return service.ExcelServiceResponse(500, "Unsupported file format, Please Upload a valid File")
 	}
-	file, err := excelize.OpenFile("")
+	file, err := excelize.OpenFile(filePath)
 	if err != nil {
 		logger.E(err)
+		return service.ExcelServiceResponse(500, "Error opening file")
 	}
 
 	rows := file.GetRows(file.GetSheetName(1))
-	if err != nil {
-		logger.E(err)
-		return service.ExcelServiceResponse(500, "Couldnt fetch Rows from the File")
-	}
 	if len(rows) == 0 {
 		return service.ExcelServiceResponse(200, "File Empty")
 	}
@@ -57,12 +54,27 @@ func (e *ExcelService) UploadFile(c context.Context) models.Response {
 	if err != nil {
 		return service.ExcelServiceResponse(500, err.Error())
 	}
+
 	RedisClient := r.Client
 	count := RedisClient.DBSize(c).Val()
 	if count == 0 {
 		AddRecordsToRedis(c, RedisClient, len(rows), rows)
 	}
-	Batching(c, DB, rows[1:], tableName)
+
+	err = Batching(c, DB, rows[1:], tableName)
+	if err != nil {
+		return service.ExcelServiceResponse(500, err.Error())
+	}
+	// ----------------Alternate Implementation---------------------------
+	// err = ConvertExcelToCSV(rows)
+	// if err != nil {
+	// 	return service.ExcelServiceResponse(500, err.Error())
+	// }
+	// err = LoadCSVIntoDB(DB,tableName)
+	// if err != nil {
+	// 	return service.ExcelServiceResponse(500, err.Error())
+	// }
+
 	return models.Response{
 		Code: 200,
 		Msg:  "Success",
@@ -71,13 +83,10 @@ func (e *ExcelService) UploadFile(c context.Context) models.Response {
 
 func (e *ExcelService) ViewData(c context.Context) models.Response {
 	RedisClient := r.Client
-
 	var results []models.OrderedRecord
-
 	size, _ := RedisClient.DBSize(c).Result()
-	logger.I("Size --------", size)
+
 	if size > 0 {
-		logger.I("Inside Redis")
 		for i := 1; i <= int(size); i++ {
 			key := fmt.Sprintf("%d", i)
 			val, err := RedisClient.Get(c, key).Bytes()
@@ -102,11 +111,12 @@ func (e *ExcelService) ViewData(c context.Context) models.Response {
 			Response: results,
 		}
 	} else {
-		logger.I("Inside DB")
 		DB := database.DB
 		defer DB.Close()
 		var results []models.Record
-		query := "SELECT address, city, company_name, county, email, first_name, last_name, phone, postal, web FROM uk_500"
+
+		query := utils.ViewDataQuery
+
 		rows, err := DB.QueryContext(c, query)
 		if err != nil {
 			logger.E("Error querying database:", err)

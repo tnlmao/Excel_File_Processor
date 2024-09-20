@@ -3,7 +3,7 @@ package models
 type Response struct {
 	Code     int
 	Msg      string
-	Response interface{}
+	Response interface{} `json:"omitempty"`
 }
 type Record struct {
 	Address     string `json:"address"`

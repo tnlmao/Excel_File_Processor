@@ -72,7 +72,7 @@ func CreateViewDataQuery(ColumnNames []string, tableName string) string {
 	createViewDataQuery := fmt.Sprintf("SELECT %s FROM %s ;", ViewData, tableName)
 	return createViewDataQuery
 }
-func Batching(ctx context.Context, DB *sql.DB, rows [][]string, tableName string) {
+func Batching(ctx context.Context, DB *sql.DB, rows [][]string, tableName string) error {
 	batchSize := 100
 	for i := 0; i < len(rows); i += batchSize {
 		batch := rows[i:min(i+batchSize, len(rows))]
@@ -87,6 +87,7 @@ func Batching(ctx context.Context, DB *sql.DB, rows [][]string, tableName string
 
 	}
 	wg.Wait()
+	return nil
 }
 func StoreDetails(ctx context.Context, DB *sql.DB, batch [][]string, tableName string) error {
 	var err error

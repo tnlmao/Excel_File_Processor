@@ -21,6 +21,6 @@ func SetupRoutes(router *gin.Engine) {
 
 	router.POST("/upload", uploadFile)
 	router.GET("/view", viewFile)
-	router.PATCH("/edit", editFile)
+	router.PUT("/edit", editFile)
 
 }
